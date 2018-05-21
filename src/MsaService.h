@@ -15,6 +15,8 @@ private:
 public:
     MsaService(std::string const& path, std::string const& dataPath);
 
-    void handle_sign_in(nlohmann::json const& data, rpc_handler::result_handler const& handler);
+    simpleipc::rpc_result handle_get_accounts();
+
+    void handle_pick_account(nlohmann::json const& data, rpc_handler::result_handler const& handler);
 
 };
