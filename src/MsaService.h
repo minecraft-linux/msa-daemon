@@ -17,6 +17,10 @@ public:
 
     simpleipc::rpc_result handle_get_accounts();
 
+    simpleipc::rpc_result handle_add_account(nlohmann::json const& data);
+
+    simpleipc::rpc_result handle_remove_account(nlohmann::json const& data);
+
     void handle_pick_account(nlohmann::json const& data, rpc_handler::result_handler const& handler);
 
 };
