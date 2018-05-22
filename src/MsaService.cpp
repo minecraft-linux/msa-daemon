@@ -11,9 +11,10 @@ MsaService::MsaService(std::string const& path, std::string const& dataPath)
     add_handler("msa/remove_account", std::bind(&MsaService::handle_remove_account, this, _3));
 
     add_handler_async("msa/pick_account", std::bind(&MsaService::handle_pick_account, this, _3, _4));
+    // add_handler_async("msa/request_token", std::bind(&MsaService::handle_request_token, this, _3, _4));
 }
 
-rpc_result MsaService::handle_get_accounts() {
+rpc_json_result MsaService::handle_get_accounts() {
     auto accounts = accountManager.getAccounts();
     nlohmann::json ret;
     auto& l = ret["accounts"] = nlohmann::json::array();
@@ -23,10 +24,10 @@ rpc_result MsaService::handle_get_accounts() {
         acc["username"] = account.getUsername();
         l.push_back(std::move(acc));
     }
-    return rpc_result::response(std::move(ret));
+    return rpc_json_result::response(std::move(ret));
 }
 
-rpc_result MsaService::handle_add_account(nlohmann::json const& data) {
+rpc_json_result MsaService::handle_add_account(nlohmann::json const& data) {
     std::string username = data["username"];
     std::string cid = data["cid"];
     std::string tokenData = data["token"];
@@ -36,12 +37,12 @@ rpc_result MsaService::handle_add_account(nlohmann::json const& data) {
     try {
         accountManager.addAccount(username, cid, token);
     } catch (msa::AccountAlreadyExistsException& e) {
-        return rpc_result::error(-101, e.what());
+        return rpc_json_result::error(-101, e.what());
     }
-    return rpc_result::response(nullptr);
+    return rpc_json_result::response(nullptr);
 }
 
-simpleipc::rpc_result MsaService::handle_remove_account(nlohmann::json const& data) {
+simpleipc::rpc_json_result MsaService::handle_remove_account(nlohmann::json const& data) {
     std::string cid = data["cid"];
     try {
         auto account = accountManager.findAccount(cid);
@@ -49,11 +50,17 @@ simpleipc::rpc_result MsaService::handle_remove_account(nlohmann::json const& da
             throw msa::NoSuchAccountException();
         accountManager.removeAccount(*account);
     } catch (msa::NoSuchAccountException& e) {
-        return rpc_result::error(-100, e.what());
+        return rpc_json_result::error(-100, e.what());
     }
-    return rpc_result::response(nullptr);
+    return rpc_json_result::response(nullptr);
 }
 
 void MsaService::handle_pick_account(nlohmann::json const& data, rpc_handler::result_handler const& handler) {
-    //
+    if (!uiClient) {
+        handler(rpc_json_result::error(-200, "Internal error (No UI client)"));
+        return;
+    }
+    uiClient->openBrowser("http://localhost/").call([handler](rpc_result<MsaUiClient::BrowserResult> r) {
+        handler(rpc_json_result::error(-200, "Not implemented yet"));
+    });
 }
