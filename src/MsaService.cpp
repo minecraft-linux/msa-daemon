@@ -12,15 +12,15 @@ std::string const MsaService::PLATFORM_NAME = "android2.1.0504.0524";
 MsaService::MsaService(std::string const& path, std::string const& dataPath)
         : service(path), storageManager(dataPath), accountManager(storageManager), loginManager(&storageManager) {
     using namespace std::placeholders;
-    add_handler("msa/get_accounts", std::bind(&MsaService::handle_get_accounts, this));
-    add_handler("msa/add_account", std::bind(&MsaService::handle_add_account, this, _3));
-    add_handler("msa/remove_account", std::bind(&MsaService::handle_remove_account, this, _3));
+    add_handler("msa/get_accounts", std::bind(&MsaService::handleGetAccounts, this));
+    add_handler("msa/add_account", std::bind(&MsaService::handleAddAccount, this, _3));
+    add_handler("msa/remove_account", std::bind(&MsaService::handleRemoveAccount, this, _3));
 
-    add_handler_async("msa/pick_account", std::bind(&MsaService::handle_pick_account, this, _3, _4));
-    add_handler_async("msa/request_token", std::bind(&MsaService::handle_request_token, this, _3, _4));
+    add_handler_async("msa/pick_account", std::bind(&MsaService::handlePickAccount, this, _3, _4));
+    add_handler_async("msa/request_token", std::bind(&MsaService::handleRequestToken, this, _3, _4));
 }
 
-rpc_json_result MsaService::handle_get_accounts() {
+rpc_json_result MsaService::handleGetAccounts() {
     auto accounts = accountManager.getAccounts();
     nlohmann::json ret;
     auto& l = ret["accounts"] = nlohmann::json::array();
@@ -33,7 +33,7 @@ rpc_json_result MsaService::handle_get_accounts() {
     return rpc_json_result::response(std::move(ret));
 }
 
-rpc_json_result MsaService::handle_add_account(nlohmann::json const& data) {
+rpc_json_result MsaService::handleAddAccount(nlohmann::json const& data) {
     std::string username = data["username"];
     std::string cid = data["cid"];
     std::string tokenData = data["token"];
@@ -48,7 +48,7 @@ rpc_json_result MsaService::handle_add_account(nlohmann::json const& data) {
     return rpc_json_result::response(nullptr);
 }
 
-simpleipc::rpc_json_result MsaService::handle_remove_account(nlohmann::json const& data) {
+simpleipc::rpc_json_result MsaService::handleRemoveAccount(nlohmann::json const& data) {
     std::string cid = data["cid"];
     try {
         auto account = accountManager.findAccount(cid);
@@ -61,7 +61,7 @@ simpleipc::rpc_json_result MsaService::handle_remove_account(nlohmann::json cons
     return rpc_json_result::response(nullptr);
 }
 
-void MsaService::handle_pick_account(nlohmann::json const& data, rpc_handler::result_handler const& handler) {
+void MsaService::handlePickAccount(nlohmann::json const& data, rpc_handler::result_handler const& handler) {
     if (!uiClient) {
         handler(rpc_json_result::error(-200, "Internal error (No UI client)"));
         return;
@@ -82,14 +82,14 @@ void MsaService::handle_pick_account(nlohmann::json const& data, rpc_handler::re
         auto const& properties = r.data().properties;
         std::string cid = properties.at("CID");
         std::string username = properties.at("Username");
-        auto token = legacy_token_from_properties(properties);
+        auto token = createLegacyTokenFromProperties(properties);
 
         auto account = accountManager.addAccount(username, cid, token);
         handler(rpc_json_result::response({{"cid", cid}}));
     });
 }
 
-std::shared_ptr<msa::LegacyToken> MsaService::legacy_token_from_properties(
+std::shared_ptr<msa::LegacyToken> MsaService::createLegacyTokenFromProperties(
         std::map<std::string, std::string> const& p) {
     std::string da_token = p.at("DAToken");
     std::string da_session_key = p.at("DASessionKey");
@@ -108,7 +108,7 @@ std::shared_ptr<msa::LegacyToken> MsaService::legacy_token_from_properties(
                                                                   Base64::decode(da_session_key)));
 }
 
-void MsaService::handle_request_token(nlohmann::json const& data, rpc_handler::result_handler const& handler) {
+void MsaService::handleRequestToken(nlohmann::json const& data, rpc_handler::result_handler const& handler) {
     std::string cid = data["cid"];
     std::string client_id = data.value("client_id", std::string());
     auto const& scope_json = data["scope"];
@@ -134,8 +134,8 @@ void MsaService::handle_request_token(nlohmann::json const& data, rpc_handler::r
             // TODO: open browser
         }
     } else if (token.hasError()) {
-        handler(rpc_json_result::error(-110, "Server error", token_error_info_to_json(*token.getError())));
+        handler(rpc_json_result::error(-110, "Server error", createTokenErrorInfoJson(*token.getError())));
     } else {
-        handler(rpc_json_result::response(token_to_json(*token.getToken())));
+        handler(rpc_json_result::response(createTokenJson(*token.getToken())));
     }
 }
