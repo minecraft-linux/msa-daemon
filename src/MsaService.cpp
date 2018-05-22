@@ -2,6 +2,7 @@
 #include <msa/network/server_config.h>
 #include <msa/network/request_utils.h>
 #include <base64.h>
+#include <msa/compact_token.h>
 #include "MsaService.h"
 
 using namespace simpleipc;
@@ -136,6 +137,35 @@ void MsaService::handleRequestToken(nlohmann::json const& data, rpc_handler::res
     } else if (token.hasError()) {
         handler(rpc_json_result::error(-110, "Server error", createTokenErrorInfoJson(*token.getError())));
     } else {
+        assert(token.getToken() != nullptr);
         handler(rpc_json_result::response(createTokenJson(*token.getToken())));
     }
+}
+
+nlohmann::json MsaService::createTokenJson(msa::Token const& token) {
+    nlohmann::json ret;
+    ret["scope"]["address"] = token.getSecurityScope().address;
+    ret["created"] = token.getCreatedTime().time_since_epoch().count();
+    ret["expires"] = token.getExpiresTime().time_since_epoch().count();
+    if (token.getType() == msa::TokenType::Legacy) {
+        auto& legacyToken = msa::token_cast<msa::LegacyToken>(token);
+        ret["type"] = "urn:passport:legacy";
+        ret["xml_data"] = Base64::encode(legacyToken.getXmlData());
+        ret["binary_secret"] = Base64::encode(legacyToken.getBinarySecret());
+    } else if (token.getType() == msa::TokenType::Compact) {
+        auto& compactToken = msa::token_cast<msa::CompactToken>(token);
+        ret["type"] = "urn:passport:compact";
+        ret["binary_token"] = compactToken.getBinaryToken();
+    }
+    return ret;
+}
+
+nlohmann::json MsaService::createTokenErrorInfoJson(msa::TokenErrorInfo const& errorInfo) {
+    nlohmann::json ret;
+    ret["req_status"] = errorInfo.reqStatus;
+    ret["error_status"] = errorInfo.errorStatus;
+    ret["flow_url"] = errorInfo.flowUrl;
+    ret["inline_auth_url"] = errorInfo.inlineAuthUrl;
+    ret["inline_end_auth_url"] = errorInfo.inlineEndAuthUrl;
+    return ret;
 }
