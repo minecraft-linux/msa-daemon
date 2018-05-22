@@ -17,7 +17,7 @@ MsaService::MsaService(std::string const& path, std::string const& dataPath)
     add_handler("msa/remove_account", std::bind(&MsaService::handle_remove_account, this, _3));
 
     add_handler_async("msa/pick_account", std::bind(&MsaService::handle_pick_account, this, _3, _4));
-    // add_handler_async("msa/request_token", std::bind(&MsaService::handle_request_token, this, _3, _4));
+    add_handler_async("msa/request_token", std::bind(&MsaService::handle_request_token, this, _3, _4));
 }
 
 rpc_json_result MsaService::handle_get_accounts() {
@@ -106,4 +106,36 @@ std::shared_ptr<msa::LegacyToken> MsaService::legacy_token_from_properties(
 
     return std::shared_ptr<msa::LegacyToken>(new msa::LegacyToken({}, da_start_time, da_expires, da_token,
                                                                   Base64::decode(da_session_key)));
+}
+
+void MsaService::handle_request_token(nlohmann::json const& data, rpc_handler::result_handler const& handler) {
+    std::string cid = data["cid"];
+    std::string client_id = data.value("client_id", std::string());
+    auto const& scope_json = data["scope"];
+    msa::SecurityScope scope = {scope_json["address"], scope_json.value("policy_ref", std::string())};
+    bool silent = data.value("silent", false);
+
+    auto account = accountManager.findAccount(cid);
+    if (!account) {
+        handler(rpc_json_result::error(-100, "No such account"));
+        return;
+    }
+
+    auto ret = account->requestTokens(loginManager, {scope}, client_id);
+    if (ret.size() == 0) {
+        handler(rpc_json_result::error(-200, "Internal error (no token returned from internal route)"));
+        return;
+    }
+    auto& token = ret.begin()->second;
+    if (token.hasError() && !token.getError()->inlineAuthUrl.empty()) {
+        if (silent) {
+            handler(rpc_json_result::error(-102, "Must show UI to acquire token (silent mode is requested)"));
+        } else {
+            // TODO: open browser
+        }
+    } else if (token.hasError()) {
+        handler(rpc_json_result::error(-110, "Server error", token_error_info_to_json(*token.getError())));
+    } else {
+        handler(rpc_json_result::response(token_to_json(*token.getToken())));
+    }
 }
