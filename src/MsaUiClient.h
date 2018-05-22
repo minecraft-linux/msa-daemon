@@ -10,10 +10,9 @@ public:
     MsaUiClient(const std::string& path);
 
 public:
+
     struct BrowserResult {
-        std::string cid;
-        std::string username;
-        std::string token;
+        std::map<std::string, std::string> properties;
     };
 
     simpleipc::client::rpc_call<BrowserResult> openBrowser(std::string const& url);

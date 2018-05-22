@@ -9,10 +9,14 @@
 class MsaService : public simpleipc::server::service {
 
 private:
+    static std::string const PLATFORM_NAME;
+
     msa::SimpleStorageManager storageManager;
     msa::LoginManager loginManager;
     msa::AccountManager accountManager;
     std::shared_ptr<MsaUiClient> uiClient;
+
+    static std::shared_ptr<msa::LegacyToken> legacy_token_from_properties(std::map<std::string, std::string> const& p);
 
 public:
     MsaService(std::string const& path, std::string const& dataPath);

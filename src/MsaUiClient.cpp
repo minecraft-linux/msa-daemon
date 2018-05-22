@@ -9,9 +9,9 @@ rpc_call<MsaUiClient::BrowserResult> MsaUiClient::openBrowser(std::string const&
     data["url"] = url;
     return rpc_call<MsaUiClient::BrowserResult>(rpc("msa/ui/open_browser", data), [](nlohmann::json const& d) {
         BrowserResult result;
-        result.username = d["username"];
-        result.cid = d["cid"];
-        result.token = d["token"];
+        auto prop = d["properties"];
+        for (auto it = prop.begin(); it != prop.end(); ++it)
+            result.properties[it.key()] = it.value();
         return result;
     });
 }
