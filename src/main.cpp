@@ -1,9 +1,10 @@
-#include "FileUtil.h"
 #include "MsaService.h"
 #include <thread>
+#include <FileUtil.h>
+#include <EnvPathUtil.h>
 
 int main() {
-    std::string msaHome = FileUtil::getDataHome() + "/msa";
+    std::string msaHome = EnvPathUtil::getDataHome() + "/msa";
     std::string msaService = msaHome + "/service";
     std::string msaUiService = msaHome + "/.ui_service";
     std::string msaDataHome = msaHome + "/data";
