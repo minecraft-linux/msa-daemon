@@ -1,6 +1,7 @@
 #pragma once
 
 #include <daemon_utils/daemon_launcher.h>
+#include <FileUtil.h>
 
 class MsaUiClient;
 
@@ -12,6 +13,10 @@ private:
 protected:
     std::vector<std::string> get_arguments() override {
         return {executable_path, "-p", service_path};
+    }
+
+    std::string get_cwd() override {
+        return FileUtil::getParent(executable_path);
     }
 
 public:
