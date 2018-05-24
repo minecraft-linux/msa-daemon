@@ -7,9 +7,10 @@
 class MsaUiClient : public simpleipc::client::service_client {
 
 public:
-    MsaUiClient(const std::string& path);
+    explicit MsaUiClient(const std::string& path) : service_client(path) {}
 
-public:
+    MsaUiClient(std::unique_ptr<simpleipc::client::service_client_impl> impl) : service_client(std::move(impl)) {}
+
 
     struct BrowserResult {
         std::map<std::string, std::string> properties;

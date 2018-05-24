@@ -2,8 +2,6 @@
 
 using namespace simpleipc::client;
 
-MsaUiClient::MsaUiClient(const std::string& path) : service_client(path) {}
-
 rpc_call<MsaUiClient::BrowserResult> MsaUiClient::openBrowser(std::string const& url) {
     nlohmann::json data;
     data["url"] = url;

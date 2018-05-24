@@ -1,4 +1,5 @@
 #include "MsaService.h"
+#include "MsaUiLauncher.h"
 #include <thread>
 #include <FileUtil.h>
 #include <EnvPathUtil.h>
@@ -9,8 +10,8 @@ int main() {
     std::string msaUiService = msaHome + "/.ui_service";
     std::string msaDataHome = msaHome + "/data";
     FileUtil::mkdirRecursive(msaDataHome);
-    MsaService service(msaService, msaDataHome);
-    service.setUiClient(std::make_shared<MsaUiClient>(msaUiService));
+    MsaUiLauncher uiLauncher (MSA_UI_APP_PATH, msaUiService);
+    MsaService service(msaService, msaDataHome, uiLauncher);
 
     while (true) {
         std::this_thread::sleep_for(std::chrono::hours(1));
