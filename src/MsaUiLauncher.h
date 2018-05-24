@@ -19,6 +19,6 @@ public:
             daemon_launcher(service_path), executable_path(executable_path) {}
 
 
-    std::shared_ptr<MsaUiClient> createClient();
+    MsaUiClient* createClient();
 
 };

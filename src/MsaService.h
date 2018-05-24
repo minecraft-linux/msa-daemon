@@ -6,7 +6,7 @@
 #include <msa/account_manager.h>
 #include <msa/token_response.h>
 #include "MsaUiClient.h"
-class MsaUiLauncher;
+class MsaUiHelper;
 
 class MsaService : public simpleipc::server::service {
 
@@ -16,8 +16,7 @@ private:
     msa::SimpleStorageManager storageManager;
     msa::LoginManager loginManager;
     msa::AccountManager accountManager;
-    MsaUiLauncher& uiLauncher;
-    std::weak_ptr<MsaUiClient> uiClient;
+    MsaUiHelper& uiHelper;
 
     static std::shared_ptr<msa::LegacyToken> createLegacyTokenFromProperties(
             std::map<std::string, std::string> const& p);
@@ -26,11 +25,8 @@ private:
 
     static nlohmann::json createTokenErrorInfoJson(msa::TokenErrorInfo const& errorInfo);
 
-
-    std::shared_ptr<MsaUiClient> acquireUiClient();
-
 public:
-    MsaService(std::string const& path, std::string const& dataPath, MsaUiLauncher& uiLauncher);
+    MsaService(std::string const& path, std::string const& dataPath, MsaUiHelper& uiHelper);
 
     simpleipc::rpc_json_result handleGetAccounts();
 

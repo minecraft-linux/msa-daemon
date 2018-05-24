@@ -4,16 +4,16 @@
 #include <msa/network/request_utils.h>
 #include <base64.h>
 #include <msa/compact_token.h>
-#include "MsaUiLauncher.h"
+#include "MsaUiHelper.h"
 
 using namespace simpleipc;
 using namespace msa::network;
 
 std::string const MsaService::PLATFORM_NAME = "android2.1.0504.0524";
 
-MsaService::MsaService(std::string const& path, std::string const& dataPath, MsaUiLauncher& uiLauncher)
+MsaService::MsaService(std::string const& path, std::string const& dataPath, MsaUiHelper& uiHelper)
         : service(path), storageManager(dataPath), accountManager(storageManager), loginManager(&storageManager),
-          uiLauncher(uiLauncher) {
+          uiHelper(uiHelper) {
     using namespace std::placeholders;
     add_handler("msa/get_accounts", std::bind(&MsaService::handleGetAccounts, this));
     add_handler("msa/add_account", std::bind(&MsaService::handleAddAccount, this, _3));
@@ -21,15 +21,6 @@ MsaService::MsaService(std::string const& path, std::string const& dataPath, Msa
 
     add_handler_async("msa/pick_account", std::bind(&MsaService::handlePickAccount, this, _3, _4));
     add_handler_async("msa/request_token", std::bind(&MsaService::handleRequestToken, this, _3, _4));
-}
-
-std::shared_ptr<MsaUiClient> MsaService::acquireUiClient() {
-    auto client = uiClient.lock();
-    if (client)
-        return client;
-    client = uiLauncher.createClient();
-    uiClient = client;
-    return client;
 }
 
 rpc_json_result MsaService::handleGetAccounts() {
@@ -82,10 +73,7 @@ void MsaService::handlePickAccount(nlohmann::json const& data, rpc_handler::resu
     if (data.count("cobrandid") > 0)
         p.emplace_back("cobrandid", data["cobrandid"]);
     std::string params = RequestUtils::encodeUrlParams(p);
-    auto uiClient = acquireUiClient();
-    uiClient->openBrowser(baseUrl + "&" + params).call(
-            // NOTE: uiClient is added here to prevent it from being destroyed before the request is complete
-            [this, handler, uiClient](rpc_result<MsaUiClient::BrowserResult> r) {
+    uiHelper.openBrowser(baseUrl + "&" + params, [this, handler](rpc_result<MsaUiClient::BrowserResult> r) {
         if (!r.success()) {
             handler(rpc_json_result::error(r.error_code(), r.error_text()));
             return;
