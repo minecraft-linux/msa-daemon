@@ -6,6 +6,7 @@
 #include <condition_variable>
 #include "MsaUiClient.h"
 #include "MsaUiLauncher.h"
+#include "MsaErrors.h"
 
 class MsaUiHelper {
 
@@ -35,7 +36,7 @@ public:
     void postRpc(F func, simpleipc::client::rpc_result_callback<T> cb) {
         post([func, cb](std::shared_ptr<MsaUiClient> c) {
             if (!c) {
-                cb(simpleipc::rpc_result<MsaUiClient::BrowserResult>::error(-201, "Failed to start UI subservice"));
+                cb(simpleipc::rpc_result<MsaUiClient::BrowserResult>::error(MsaErrors::InternalUIStartError, "Failed to start UI subservice"));
                 return;
             }
             func(c.get()).call([cb, c](simpleipc::rpc_result<T> res) {

@@ -5,6 +5,7 @@
 #include <base64.h>
 #include <msa/compact_token.h>
 #include "MsaUiHelper.h"
+#include "MsaErrors.h"
 
 using namespace simpleipc;
 using namespace msa::network;
@@ -46,7 +47,7 @@ rpc_json_result MsaService::handleAddAccount(nlohmann::json const& data) {
     try {
         accountManager.addAccount(username, cid, token);
     } catch (msa::AccountAlreadyExistsException& e) {
-        return rpc_json_result::error(-101, e.what());
+        return rpc_json_result::error(MsaErrors::AccountAlreadyExists, e.what());
     }
     return rpc_json_result::response(nullptr);
 }
@@ -59,7 +60,7 @@ simpleipc::rpc_json_result MsaService::handleRemoveAccount(nlohmann::json const&
             throw msa::NoSuchAccountException();
         accountManager.removeAccount(*account);
     } catch (msa::NoSuchAccountException& e) {
-        return rpc_json_result::error(-100, e.what());
+        return rpc_json_result::error(MsaErrors::NoSuchAccount, e.what());
     }
     return rpc_json_result::response(nullptr);
 }
@@ -116,24 +117,25 @@ void MsaService::handleRequestToken(nlohmann::json const& data, rpc_handler::res
 
     auto account = accountManager.findAccount(cid);
     if (!account) {
-        handler(rpc_json_result::error(-100, "No such account"));
+        handler(rpc_json_result::error(MsaErrors::NoSuchAccount, "No such account"));
         return;
     }
 
     auto ret = account->requestTokens(loginManager, {scope}, client_id);
     if (ret.size() == 0) {
-        handler(rpc_json_result::error(-200, "Internal error (no token returned from internal route)"));
+        handler(rpc_json_result::error(MsaErrors::InternalError, "Internal error (no token returned from internal route)"));
         return;
     }
     auto& token = ret.begin()->second;
     if (token.hasError() && !token.getError()->inlineAuthUrl.empty()) {
         if (silent) {
-            handler(rpc_json_result::error(-102, "Must show UI to acquire token (silent mode is requested)"));
+            handler(rpc_json_result::error(MsaErrors::MustShowUI, "Must show UI to acquire token (silent mode is requested)"));
         } else {
             // TODO: open browser
         }
     } else if (token.hasError()) {
-        handler(rpc_json_result::error(-110, "Server error", createTokenErrorInfoJson(*token.getError())));
+        handler(rpc_json_result::error(MsaErrors::TokenAcquisitionServerError, "Server error",
+                                       createTokenErrorInfoJson(*token.getError())));
     } else {
         assert(token.getToken() != nullptr);
         handler(rpc_json_result::response(createTokenJson(*token.getToken())));
