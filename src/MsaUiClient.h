@@ -3,13 +3,12 @@
 #include <simpleipc/client/service_client.h>
 #include <simpleipc/client/rpc_call.h>
 #include <msa/legacy_token.h>
+#include <daemon_utils/launchable_service_client.h>
 
-class MsaUiClient : public simpleipc::client::service_client {
+class MsaUiClient : public daemon_utils::launchable_service_client {
 
 public:
-    explicit MsaUiClient(const std::string& path) : service_client(path) {}
-
-    MsaUiClient(std::unique_ptr<simpleipc::client::service_client_impl> impl) : service_client(std::move(impl)) {}
+    explicit MsaUiClient(daemon_utils::daemon_launcher& launcher) : launchable_service_client(launcher) {}
 
 
     struct BrowserResult {

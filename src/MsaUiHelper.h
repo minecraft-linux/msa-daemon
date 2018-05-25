@@ -23,7 +23,7 @@ private:
     void handleThread();
 
 public:
-    MsaUiHelper(MsaUiLauncher& launcher) : launcher(launcher) {}
+    explicit MsaUiHelper(MsaUiLauncher& launcher) : launcher(launcher) {}
 
     ~MsaUiHelper() {
         if (thread.joinable())

@@ -10,7 +10,7 @@ void MsaUiHelper::handleThread() {
             lock.unlock();
             std::shared_ptr<MsaUiClient> service = weakService.lock();
             if (!service) {
-                service = std::shared_ptr<MsaUiClient>(launcher.createClient(), [this](MsaUiClient* client) {
+                service = std::shared_ptr<MsaUiClient>(new MsaUiClient(launcher), [this](MsaUiClient* client) {
                     cb_cv.notify_all();
                     delete client;
                 });
