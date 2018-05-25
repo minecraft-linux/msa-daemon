@@ -4,6 +4,10 @@
 #include <FileUtil.h>
 #include <EnvPathUtil.h>
 #include <log.h>
+#include <argparser.h>
+
+using namespace argparser;
+using namespace daemon_utils;
 
 static std::string findMsaUI() {
 #ifdef MSA_UI_APP_PATH
@@ -24,14 +28,20 @@ static std::string findMsaUI() {
     return std::string();
 }
 
-int main() {
-    std::string msaHome = EnvPathUtil::getDataHome() + "/msa";
-    std::string msaService = msaHome + "/service";
-    std::string msaUiService = msaHome + "/.ui_service";
-    std::string msaDataHome = msaHome + "/data";
+int main(int argc, const char** argv) {
+    arg_parser args;
+    arg<std::string> msaHome(args, "--dir", "-d", "Specifies the main directory where the service handle and data will be stored", EnvPathUtil::getDataHome() + "/msa");
+    arg<bool> autoClose(args, "--auto-exit", "-x", "Automatically exits the daemon after all clients have disconnected", false);
+    if (!args.parse(argc, argv))
+        return 1;
+
+    std::string msaService = msaHome.get() + "/service";
+    std::string msaUiService = msaHome.get() + "/.ui_service";
+    std::string msaDataHome = msaHome.get() + "/data";
     FileUtil::mkdirRecursive(msaDataHome);
     MsaUiLauncher uiLauncher (findMsaUI(), msaUiService);
     MsaUiHelper uiHelper (uiLauncher);
-    MsaService service(msaService, msaDataHome, uiHelper, daemon_utils::shutdown_policy::no_connections);
+    MsaService service(msaService, msaDataHome, uiHelper,
+                       autoClose ? shutdown_policy::no_connections : shutdown_policy::never);
     service.run();
 }
