@@ -12,9 +12,10 @@ using namespace msa::network;
 
 std::string const MsaService::PLATFORM_NAME = "android2.1.0504.0524";
 
-MsaService::MsaService(std::string const& path, std::string const& dataPath, MsaUiHelper& uiHelper)
-        : service(path), storageManager(dataPath), accountManager(storageManager), loginManager(&storageManager),
-          uiHelper(uiHelper) {
+MsaService::MsaService(std::string const& path, std::string const& dataPath, MsaUiHelper& uiHelper,
+                       daemon_utils::shutdown_policy shutdownPolicy)
+        : auto_shutdown_service(path, shutdownPolicy), storageManager(dataPath), accountManager(storageManager),
+          loginManager(&storageManager), uiHelper(uiHelper) {
     using namespace std::placeholders;
     add_handler("msa/get_accounts", std::bind(&MsaService::handleGetAccounts, this));
     add_handler("msa/add_account", std::bind(&MsaService::handleAddAccount, this, _3));

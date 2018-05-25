@@ -32,9 +32,6 @@ int main() {
     FileUtil::mkdirRecursive(msaDataHome);
     MsaUiLauncher uiLauncher (findMsaUI(), msaUiService);
     MsaUiHelper uiHelper (uiLauncher);
-    MsaService service(msaService, msaDataHome, uiHelper);
-
-    while (true) {
-        std::this_thread::sleep_for(std::chrono::hours(1));
-    }
+    MsaService service(msaService, msaDataHome, uiHelper, daemon_utils::shutdown_policy::no_connections);
+    service.run();
 }

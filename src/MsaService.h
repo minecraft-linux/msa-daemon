@@ -1,14 +1,15 @@
 #pragma once
 
-#include <simpleipc/server/service.h>
+#include <daemon_utils/auto_shutdown_service.h>
 #include <msa/simple_storage_manager.h>
 #include <msa/login_manager.h>
 #include <msa/account_manager.h>
 #include <msa/token_response.h>
 #include "MsaUiClient.h"
+
 class MsaUiHelper;
 
-class MsaService : public simpleipc::server::service {
+class MsaService : public daemon_utils::auto_shutdown_service {
 
 private:
     static std::string const PLATFORM_NAME;
@@ -26,7 +27,8 @@ private:
     static nlohmann::json createTokenErrorInfoJson(msa::TokenErrorInfo const& errorInfo);
 
 public:
-    MsaService(std::string const& path, std::string const& dataPath, MsaUiHelper& uiHelper);
+    MsaService(std::string const& path, std::string const& dataPath, MsaUiHelper& uiHelper,
+               daemon_utils::shutdown_policy shutdownPolicy);
 
     simpleipc::rpc_json_result handleGetAccounts();
 
