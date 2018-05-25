@@ -10,7 +10,7 @@ private:
 
 protected:
     std::vector<std::string> get_arguments() override {
-        return {executable_path, "-p", service_path};
+        return {executable_path, "-p", service_path, "-x"};
     }
 
     std::string get_cwd() override {
