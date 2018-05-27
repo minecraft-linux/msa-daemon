@@ -3,12 +3,13 @@
 void MsaUiHelper::handleThread() {
     std::unique_lock<std::mutex> lock (cbs_mutex);
     std::weak_ptr<MsaUiClient> weakService;
+    std::shared_ptr<MsaUiClient> service;
     do {
         if (!this->cbs.empty()) {
             auto cbs = std::move(this->cbs);
 
             lock.unlock();
-            std::shared_ptr<MsaUiClient> service = weakService.lock();
+            service = weakService.lock();
             if (!service) {
                 service = std::shared_ptr<MsaUiClient>(new MsaUiClient(launcher), [this](MsaUiClient* client) {
                     cb_cv.notify_all();
@@ -17,12 +18,15 @@ void MsaUiHelper::handleThread() {
                 weakService = service;
             }
 
-            for (auto& cb : cbs)
+            for (auto& cb : cbs) {
                 cb(service);
+            }
             lock.lock();
         }
         cb_cv.wait(lock);
-    } while (!weakService.expired() && this->cbs.empty());
+        if (this->cbs.empty())
+            service.reset();
+    } while (!weakService.expired() || !this->cbs.empty());
     thread_running = false;
 }
 
@@ -34,6 +38,8 @@ void MsaUiHelper::post(CallbackFunc func) {
         cb_cv.notify_all();
     } else {
         thread_running = true;
+        if (thread.joinable())
+            thread.join();
         thread = std::thread(&MsaUiHelper::handleThread, this);
     }
 }
