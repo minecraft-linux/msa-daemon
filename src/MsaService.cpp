@@ -22,6 +22,7 @@ MsaService::MsaService(std::string const& path, std::string const& dataPath, Msa
     add_handler("msa/remove_account", std::bind(&MsaService::handleRemoveAccount, this, _3));
 
     add_handler_async("msa/pick_account", std::bind(&MsaService::handlePickAccount, this, _3, _4));
+    add_handler_async("msa/add_account_browser", std::bind(&MsaService::handleAddAccountWithBrowser, this, _3, _4));
     add_handler_async("msa/request_token", std::bind(&MsaService::handleRequestToken, this, _3, _4));
 }
 
@@ -74,12 +75,16 @@ void MsaService::handlePickAccount(nlohmann::json const& data, rpc_handler::resu
         handleAddAccountWithBrowser(data, handler);
         return;
     }
-    uiHelper.pickAccount(items, [handler](rpc_result<MsaUiClient::PickAccountResult> r) {
+    uiHelper.pickAccount(items, [this, handler, data](rpc_result<MsaUiClient::PickAccountResult> r) {
         if (!r.success()) {
             handler(rpc_json_result::error(r.error_code(), r.error_text()));
             return;
         }
-        handler(rpc_json_result::response({{"cid", r.data().cid}}));
+        if (r.data().add_account) {
+            handleAddAccountWithBrowser(data, handler);
+        } else {
+            handler(rpc_json_result::response({{"cid", r.data().cid}}));
+        }
     });
 }
 

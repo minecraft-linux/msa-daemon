@@ -28,6 +28,7 @@ rpc_call<MsaUiClient::PickAccountResult> MsaUiClient::pickAccount(std::vector<Pi
     return rpc_call<MsaUiClient::PickAccountResult>(rpc("msa/ui/pick_account", data), [](nlohmann::json const& d) {
         PickAccountResult result;
         result.cid = d.value("cid", "");
+        result.add_account = d.value("add_account", false);
         return result;
     });
 }

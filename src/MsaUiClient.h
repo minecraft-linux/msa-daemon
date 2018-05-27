@@ -24,6 +24,7 @@ public:
     };
     struct PickAccountResult {
         std::string cid;
+        bool add_account;
     };
 
     simpleipc::client::rpc_call<PickAccountResult> pickAccount(std::vector<PickAccountItem> const& items);
