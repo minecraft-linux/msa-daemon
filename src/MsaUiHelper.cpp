@@ -1,9 +1,10 @@
 #include "MsaUiHelper.h"
 
+thread_local std::shared_ptr<MsaUiClient> MsaUiHelper::service;
+
 void MsaUiHelper::handleThread() {
     std::unique_lock<std::mutex> lock (cbs_mutex);
     std::weak_ptr<MsaUiClient> weakService;
-    std::shared_ptr<MsaUiClient> service;
     do {
         if (!this->cbs.empty()) {
             auto cbs = std::move(this->cbs);
@@ -12,8 +13,8 @@ void MsaUiHelper::handleThread() {
             service = weakService.lock();
             if (!service) {
                 service = std::shared_ptr<MsaUiClient>(new MsaUiClient(launcher), [this](MsaUiClient* client) {
-                    cb_cv.notify_all();
                     delete client;
+                    cb_cv.notify_all();
                 });
                 weakService = service;
             }
@@ -22,10 +23,9 @@ void MsaUiHelper::handleThread() {
                 cb(service);
             }
             lock.lock();
+            service.reset();
         }
         cb_cv.wait(lock);
-        if (this->cbs.empty())
-            service.reset();
     } while (!weakService.expired() || !this->cbs.empty());
     thread_running = false;
 }
