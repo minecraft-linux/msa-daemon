@@ -13,3 +13,21 @@ rpc_call<MsaUiClient::BrowserResult> MsaUiClient::openBrowser(std::string const&
         return result;
     });
 }
+
+rpc_call<MsaUiClient::PickAccountResult> MsaUiClient::pickAccount(std::vector<PickAccountItem> const& items) {
+    nlohmann::json data;
+    auto& accounts = data["accounts"] = nlohmann::json::array();
+    for (auto const& item : items) {
+        accounts.push_back(
+                {
+                        {"cid", item.cid},
+                        {"username", item.username}
+                });
+    };
+
+    return rpc_call<MsaUiClient::PickAccountResult>(rpc("msa/ui/pick_account", data), [](nlohmann::json const& d) {
+        PickAccountResult result;
+        result.cid = d.value("cid", "");
+        return result;
+    });
+}

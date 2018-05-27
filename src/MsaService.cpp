@@ -67,6 +67,23 @@ simpleipc::rpc_json_result MsaService::handleRemoveAccount(nlohmann::json const&
 }
 
 void MsaService::handlePickAccount(nlohmann::json const& data, rpc_handler::result_handler const& handler) {
+    std::vector<MsaUiClient::PickAccountItem> items;
+    for (auto const& acc : accountManager.getAccounts())
+        items.push_back({acc.getCID(), acc.getUsername()});
+    if (items.empty()) {
+        handleAddAccountWithBrowser(data, handler);
+        return;
+    }
+    uiHelper.pickAccount(items, [handler](rpc_result<MsaUiClient::PickAccountResult> r) {
+        if (!r.success()) {
+            handler(rpc_json_result::error(r.error_code(), r.error_text()));
+            return;
+        }
+        handler(rpc_json_result::response({{"cid", r.data().cid}}));
+    });
+}
+
+void MsaService::handleAddAccountWithBrowser(nlohmann::json const& data, rpc_handler::result_handler const& handler) {
     std::string baseUrl = ServerConfig::ENDPOINT_INLINE_CONNECT_PARTNER;
     std::vector<std::pair<std::string, std::string>> p;
     p.emplace_back("platform", PLATFORM_NAME);

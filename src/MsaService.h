@@ -38,6 +38,8 @@ public:
 
     void handlePickAccount(nlohmann::json const& data, rpc_handler::result_handler const& handler);
 
+    void handleAddAccountWithBrowser(nlohmann::json const& data, rpc_handler::result_handler const& handler);
+
     void handleRequestToken(nlohmann::json const& data, rpc_handler::result_handler const& handler);
 
 };

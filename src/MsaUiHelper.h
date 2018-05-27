@@ -36,7 +36,7 @@ public:
     void postRpc(F func, simpleipc::client::rpc_result_callback<T> cb) {
         post([func, cb](std::shared_ptr<MsaUiClient> c) {
             if (!c) {
-                cb(simpleipc::rpc_result<MsaUiClient::BrowserResult>::error(MsaErrors::InternalUIStartError, "Failed to start UI subservice"));
+                cb(simpleipc::rpc_result<T>::error(MsaErrors::InternalUIStartError, "Failed to start UI subservice"));
                 return;
             }
             func(c.get()).call([cb, c](simpleipc::rpc_result<T> res) {
@@ -47,6 +47,11 @@ public:
 
     void openBrowser(std::string const& url, simpleipc::client::rpc_result_callback<MsaUiClient::BrowserResult> cb) {
         postRpc(std::bind(&MsaUiClient::openBrowser, std::placeholders::_1, url), std::move(cb));
+    }
+
+    void pickAccount(std::vector<MsaUiClient::PickAccountItem> const& items,
+                     simpleipc::client::rpc_result_callback<MsaUiClient::PickAccountResult> cb) {
+        postRpc(std::bind(&MsaUiClient::pickAccount, std::placeholders::_1, items), std::move(cb));
     }
 
 };

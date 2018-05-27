@@ -17,4 +17,15 @@ public:
 
     simpleipc::client::rpc_call<BrowserResult> openBrowser(std::string const& url);
 
+
+    struct PickAccountItem {
+        std::string cid;
+        std::string username;
+    };
+    struct PickAccountResult {
+        std::string cid;
+    };
+
+    simpleipc::client::rpc_call<PickAccountResult> pickAccount(std::vector<PickAccountItem> const& items);
+
 };
