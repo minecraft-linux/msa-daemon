@@ -154,7 +154,13 @@ void MsaService::handleRequestToken(nlohmann::json const& data, rpc_handler::res
         if (silent) {
             handler(rpc_json_result::error(MsaErrors::MustShowUI, "Must show UI to acquire token (silent mode is requested)"));
         } else {
-            // TODO: open browser
+            uiHelper.openBrowser(token.getError()->inlineAuthUrl, [this, data, handler](rpc_result<MsaUiClient::BrowserResult> r) {
+                if (!r.success()) {
+                    handler(rpc_json_result::error(r.error_code(), r.error_text()));
+                    return;
+                }
+                handleRequestToken(data, handler);
+            });
         }
     } else if (token.hasError()) {
         handler(rpc_json_result::error(MsaErrors::TokenAcquisitionServerError, "Server error",
