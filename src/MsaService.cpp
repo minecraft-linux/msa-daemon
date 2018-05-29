@@ -168,8 +168,8 @@ void MsaService::handleRequestToken(nlohmann::json const& data, rpc_handler::res
 nlohmann::json MsaService::createTokenJson(msa::Token const& token) {
     nlohmann::json ret;
     ret["scope"]["address"] = token.getSecurityScope().address;
-    ret["created"] = token.getCreatedTime().time_since_epoch().count();
-    ret["expires"] = token.getExpiresTime().time_since_epoch().count();
+    ret["created"] = std::chrono::duration_cast<std::chrono::milliseconds>(token.getCreatedTime().time_since_epoch()).count();
+    ret["expires"] = std::chrono::duration_cast<std::chrono::milliseconds>(token.getExpiresTime().time_since_epoch()).count();
     if (token.getType() == msa::TokenType::Legacy) {
         auto& legacyToken = msa::token_cast<msa::LegacyToken>(token);
         ret["type"] = "urn:passport:legacy";
