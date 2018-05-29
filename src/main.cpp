@@ -39,7 +39,7 @@ int main(int argc, const char** argv) {
     std::string msaUiService = msaHome.get() + "/.ui_service";
     std::string msaDataHome = msaHome.get() + "/data";
     FileUtil::mkdirRecursive(msaDataHome);
-    MsaUiLauncher uiLauncher (findMsaUI(), msaUiService);
+    MsaUiLauncher uiLauncher (findMsaUI(), msaUiService, msaService);
     MsaUiHelper uiHelper (uiLauncher);
     MsaService service(msaService, msaDataHome, uiHelper,
                        autoClose ? shutdown_policy::no_connections : shutdown_policy::never);
