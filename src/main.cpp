@@ -9,23 +9,24 @@
 using namespace argparser;
 using namespace daemon_utils;
 
-static std::string findMsaUI() {
+static bool findMsaUI(std::string const& what, std::string& ret) {
 #ifdef MSA_UI_APP_PATH
-    std::string path = MSA_UI_APP_PATH;
-    auto appDir = EnvPathUtil::getAppDir() + "/";
-    for (size_t iof = 0; iof != std::string::npos; ) {
-        size_t iof2 = path.find(':', iof);
-        std::string el = (iof2 == std::string::npos ? path.substr(iof) : path.substr(iof, iof2 - iof));
-        if (el[0] != '/')
-            el = appDir + el;
-        if (FileUtil::exists(el))
-            return el;
-        iof = iof2;
-    }
-#else
-    Log::warn("Main", "No Msa UI path set on compile-time; will not be able to add new accounts");
+    if (EnvPathUtil::findInPath(what, ret, MSA_UI_APP_PATH, EnvPathUtil::getAppDir().c_str()))
+        return true;
 #endif
-    return std::string();
+    if (EnvPathUtil::findInPath(what, ret))
+        return true;
+    return false;
+}
+
+static std::string findMsaUI() {
+    std::string ret;
+    if (findMsaUI("msa-ui-gtk", ret))
+        return ret;;
+    if (findMsaUI("msa-ui-qt", ret))
+        return ret;
+    Log::warn("Main", "Could not find MSA UI, it will not be possible to log in");
+    return ret;
 }
 
 int main(int argc, const char** argv) {
