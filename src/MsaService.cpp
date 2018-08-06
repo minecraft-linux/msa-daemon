@@ -93,9 +93,9 @@ void MsaService::handleAddAccountWithBrowser(nlohmann::json const& data, rpc_han
     std::vector<std::pair<std::string, std::string>> p;
     p.emplace_back("platform", PLATFORM_NAME);
     if (data.count("client_id") > 0)
-        p.emplace_back("client_id", data["client_id"]);
+        p.emplace_back("client_id", data["client_id"].get<std::string>());
     if (data.count("cobrandid") > 0)
-        p.emplace_back("cobrandid", data["cobrandid"]);
+        p.emplace_back("cobrandid", data["cobrandid"].get<std::string>());
     std::string params = RequestUtils::encodeUrlParams(p);
     uiHelper.openBrowser(baseUrl + "&" + params, [this, handler](rpc_result<MsaUiClient::BrowserResult> r) {
         if (!r.success()) {
