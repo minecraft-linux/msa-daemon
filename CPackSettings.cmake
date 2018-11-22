@@ -6,7 +6,11 @@ set(CPACK_PACKAGE_CONTACT "https://github.com/minecraft-linux/msa-manifest/issue
 set(CPACK_GENERATOR "TGZ;DEB")
 set(CPACK_INSTALL_CMAKE_PROJECTS "${CMAKE_CURRENT_BINARY_DIR};msa-daemon;msa-daemon;/")
 set(CPACK_OUTPUT_CONFIG_FILE CPackConfig.cmake)
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>=2.14), libssl1.1, libcurl4")
+if (DEB_XENIAL_DEPENDENCIES)
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>=2.14), libssl1.0.0, libcurl3")
+else()
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>=2.14), libssl1.1, libcurl4")
+endif()
 set(CPACK_DEBIAN_PACKAGE_VERSION "${BUILD_TIMESTAMP}-${MANIFEST_GIT_COMMIT_HASH}")
 
 include(CPack)
