@@ -154,10 +154,23 @@ void MsaService::handleRequestToken(nlohmann::json const& data, rpc_handler::res
         if (silent) {
             handler(rpc_json_result::error(MsaErrors::MustShowUI, "Must show UI to acquire token (silent mode is requested)"));
         } else {
-            uiHelper.openBrowser(token.getError()->inlineAuthUrl, [this, data, handler](rpc_result<MsaUiClient::BrowserResult> r) {
+            uiHelper.openBrowser(token.getError()->inlineAuthUrl, [this, data, cid, handler](rpc_result<MsaUiClient::BrowserResult> r) {
                 if (!r.success()) {
                     handler(rpc_json_result::error(r.error_code(), r.error_text()));
                     return;
+                }
+                auto const& properties = r.data().properties;
+                if (properties.count("CID") > 0 && properties.count("Username") > 0 &&
+                    properties.count("DAToken") > 0 && properties.count("DASessionKey") > 0) {
+                    std::string resCid = properties.at("CID");
+                    std::string username = properties.at("Username");
+                    auto newToken = createLegacyTokenFromProperties(properties);
+                    accountManager.updateAccount(username, resCid, std::move(newToken));
+                    if (resCid != cid) {
+                        handler(rpc_json_result::error(MsaErrors::InternalError,
+                                "Internal error (login returned a different account)"));
+                        return;
+                    }
                 }
                 handleRequestToken(data, handler);
             });
