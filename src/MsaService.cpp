@@ -42,12 +42,13 @@ rpc_json_result MsaService::handleGetAccounts() {
 rpc_json_result MsaService::handleAddAccount(nlohmann::json const& data) {
     std::string username = data["username"];
     std::string cid = data["cid"];
+    std::string puid = data["puid"];
     std::string tokenData = data["token"];
     rapidxml::xml_document<char> doc;
     doc.parse<0>(&tokenData[0]);
     auto token = msa::token_pointer_cast<msa::LegacyToken>(msa::Token::fromXml(doc));
     try {
-        accountManager.addAccount(username, cid, token);
+        accountManager.addAccount(username, cid, puid, token);
     } catch (msa::AccountAlreadyExistsException& e) {
         return rpc_json_result::error(MsaErrors::AccountAlreadyExists, e.what());
     }
@@ -104,10 +105,11 @@ void MsaService::handleAddAccountWithBrowser(nlohmann::json const& data, rpc_han
         }
         auto const& properties = r.data().properties;
         std::string cid = properties.at("CID");
+        std::string puid = properties.at("PUID");
         std::string username = properties.at("Username");
         auto token = createLegacyTokenFromProperties(properties);
 
-        auto account = accountManager.addAccount(username, cid, token);
+        auto account = accountManager.addAccount(username, cid, puid, token);
         handler(rpc_json_result::response({{"cid", cid}}));
     });
 }
@@ -154,19 +156,21 @@ void MsaService::handleRequestToken(nlohmann::json const& data, rpc_handler::res
         if (silent) {
             handler(rpc_json_result::error(MsaErrors::MustShowUI, "Must show UI to acquire token (silent mode is requested)"));
         } else {
-            uiHelper.openBrowser(token.getError()->inlineAuthUrl, [this, account, data, cid, handler]
+            uiHelper.openBrowser(token.getError()->inlineAuthUrl, [this, account, data, handler]
                     (rpc_result<MsaUiClient::BrowserResult> r) {
                 if (!r.success()) {
                     handler(rpc_json_result::error(r.error_code(), r.error_text()));
                     return;
                 }
                 auto const& properties = r.data().properties;
-                if (properties.count("CID") > 0 && properties.count("Username") > 0 &&
+                if (properties.count("PUID") > 0 && properties.count("Username") > 0 &&
                     properties.count("DAToken") > 0 && properties.count("DASessionKey") > 0) {
-                    std::string resCid = properties.at("CID");
-                    if (resCid != cid) {
+                    std::string resPuid = properties.at("PUID");
+                    if (resPuid != account->getPUID() &&
+                        !(account->getPUID().empty() && properties.at("CID").empty())) {
                         handler(rpc_json_result::error(MsaErrors::InternalError,
                                 "Internal error (login returned a different account)"));
+                        // TODO: add a new account from here maybe?
                         return;
                     }
                     std::string username = properties.at("Username");
