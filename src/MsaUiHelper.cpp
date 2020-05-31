@@ -1,4 +1,5 @@
 #include "MsaUiHelper.h"
+#include <iostream>
 
 thread_local std::shared_ptr<MsaUiClient> MsaUiHelper::service;
 
@@ -12,11 +13,22 @@ void MsaUiHelper::handleThread() {
             lock.unlock();
             service = weakService.lock();
             if (!service) {
-                service = std::shared_ptr<MsaUiClient>(new MsaUiClient(launcher), [this](MsaUiClient* client) {
-                    delete client;
-                    cb_cv.notify_all();
-                });
-                weakService = service;
+                for (size_t i = 0; i < 5; i++) {
+                    try {
+                        service = std::shared_ptr<MsaUiClient>(new MsaUiClient(launcher), [this](MsaUiClient* client) {
+                            delete client;
+                            cb_cv.notify_all();
+                        });
+                        weakService = service;
+                        break;
+                    } catch (const std::exception& ex) {
+                        std::cout << "MsaUiHelper Failed to start login UI\nYou are unable to login\n";
+                        std::this_thread::sleep_for(std::chrono::seconds(5));
+                    }
+                }
+                if (!service) {
+                    break;
+                }
             }
 
             for (auto& cb : cbs) {
