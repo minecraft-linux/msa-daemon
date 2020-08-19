@@ -2,9 +2,10 @@
 
 using namespace simpleipc::client;
 
-rpc_call<MsaUiClient::BrowserResult> MsaUiClient::openBrowser(std::string const& url) {
+rpc_call<MsaUiClient::BrowserResult> MsaUiClient::openBrowser(std::string const& url, std::string const& endurl) {
     nlohmann::json data;
     data["url"] = url;
+    data["endurl"] = endurl;
     return rpc_call<MsaUiClient::BrowserResult>(rpc("msa/ui/open_browser", data), [](nlohmann::json const& d) {
         BrowserResult result;
         auto prop = d["properties"];

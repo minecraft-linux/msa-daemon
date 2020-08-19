@@ -42,4 +42,6 @@ public:
 
     void handleRequestToken(nlohmann::json const& data, rpc_handler::result_handler const& handler);
 
+    void handleOpenBrowser(nlohmann::json const& data, rpc_handler::result_handler const& handler);
+
 };

@@ -51,8 +51,8 @@ public:
         });
     }
 
-    void openBrowser(std::string const& url, simpleipc::client::rpc_result_callback<MsaUiClient::BrowserResult> cb) {
-        postRpc(std::bind(&MsaUiClient::openBrowser, std::placeholders::_1, url), std::move(cb));
+    void openBrowser(std::string const& url, std::string const& endurl, simpleipc::client::rpc_result_callback<MsaUiClient::BrowserResult> cb) {
+        postRpc(std::bind(&MsaUiClient::openBrowser, std::placeholders::_1, url, endurl), std::move(cb));
     }
 
     void pickAccount(std::vector<MsaUiClient::PickAccountItem> const& items,

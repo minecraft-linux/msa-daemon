@@ -24,6 +24,7 @@ MsaService::MsaService(std::string const& path, std::string const& dataPath, Msa
     add_handler_async("msa/pick_account", std::bind(&MsaService::handlePickAccount, this, _3, _4));
     add_handler_async("msa/add_account_browser", std::bind(&MsaService::handleAddAccountWithBrowser, this, _3, _4));
     add_handler_async("msa/request_token", std::bind(&MsaService::handleRequestToken, this, _3, _4));
+    add_handler_async("msa/open_browser", std::bind(&MsaService::handleOpenBrowser, this, _3, _4));
 }
 
 rpc_json_result MsaService::handleGetAccounts() {
@@ -98,7 +99,7 @@ void MsaService::handleAddAccountWithBrowser(nlohmann::json const& data, rpc_han
     if (data.count("cobrandid") > 0)
         p.emplace_back("cobrandid", data["cobrandid"].get<std::string>());
     std::string params = RequestUtils::encodeUrlParams(p);
-    uiHelper.openBrowser(baseUrl + "&" + params, [this, handler](rpc_result<MsaUiClient::BrowserResult> r) {
+    uiHelper.openBrowser(baseUrl + "&" + params, {}, [this, handler](rpc_result<MsaUiClient::BrowserResult> r) {
         if (!r.success()) {
             handler(rpc_json_result::error(r.error_code(), r.error_text()));
             return;
@@ -156,7 +157,7 @@ void MsaService::handleRequestToken(nlohmann::json const& data, rpc_handler::res
         if (silent) {
             handler(rpc_json_result::error(MsaErrors::MustShowUI, "Must show UI to acquire token (silent mode is requested)"));
         } else {
-            uiHelper.openBrowser(token.getError()->inlineAuthUrl, [this, account, data, handler]
+            uiHelper.openBrowser(token.getError()->inlineAuthUrl, {}, [this, account, data, handler]
                     (rpc_result<MsaUiClient::BrowserResult> r) {
                 if (!r.success()) {
                     handler(rpc_json_result::error(r.error_code(), r.error_text()));
@@ -215,4 +216,14 @@ nlohmann::json MsaService::createTokenErrorInfoJson(msa::TokenErrorInfo const& e
     ret["inline_auth_url"] = errorInfo.inlineAuthUrl;
     ret["inline_end_auth_url"] = errorInfo.inlineEndAuthUrl;
     return ret;
+}
+
+void MsaService::handleOpenBrowser(nlohmann::json const& data, rpc_handler::result_handler const& handler) {
+    uiHelper.openBrowser(data["url"], data["endurl"], [this, handler](rpc_result<MsaUiClient::BrowserResult> r) { 
+        if (r.data().properties.count("endurl") == 1) { 
+            handler(rpc_json_result::response({{"endurl", r.data().properties.at("endurl")}}));
+        } else {
+            handler(rpc_json_result::response({{"endurl", ""}}));
+        }
+    });
 }

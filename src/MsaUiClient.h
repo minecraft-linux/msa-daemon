@@ -15,7 +15,7 @@ public:
         std::map<std::string, std::string> properties;
     };
 
-    simpleipc::client::rpc_call<BrowserResult> openBrowser(std::string const& url);
+    simpleipc::client::rpc_call<BrowserResult> openBrowser(std::string const& url, std::string const& endurl = {});
 
 
     struct PickAccountItem {
